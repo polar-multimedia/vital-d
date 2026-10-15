@@ -9,11 +9,11 @@
  *   - Voz de Adi: entrega tokens temporales de Gemini Live; la clave nunca sale de aquí.
  *
  * Propiedades del script (Configuración del proyecto › Propiedades del script):
- *   GEMINI_API_KEY   clave de Gemini (AI Studio)
- *   ADMIN_EMAIL      correo del staff para el escáner
- *   ADMIN_PASSWORD   contraseña del staff para el escáner
- *   SESSION_SECRET   texto largo al azar (firma las sesiones del staff)
+ *   GEMINI_API_KEY   clave de Gemini (AI Studio)            ← obligatoria
+ *   ADMIN_PASSWORD   contraseña del staff para el escáner    ← obligatoria
+ *   ADMIN_EMAIL      opcional; por defecto, el correo de quien implementa el script
  *   GEMINI_API_VERSION  opcional, v1alpha por defecto
+ *   SESSION_SECRET   se genera solo la primera vez
  */
 
 var HEADERS = ['ID', 'Fecha de registro', 'Nombre', 'Correo', 'Especialidad', 'Check-in', 'Hora de check-in', 'Correo enviado'];
@@ -213,9 +213,9 @@ function liveToken_(id) {
 
 function login_(email, password) {
   var props = PropertiesService.getScriptProperties();
-  var okEmail = String(props.getProperty('ADMIN_EMAIL') || '').trim().toLowerCase();
+  var okEmail = String(props.getProperty('ADMIN_EMAIL') || Session.getEffectiveUser().getEmail() || '').trim().toLowerCase();
   var okPass = String(props.getProperty('ADMIN_PASSWORD') || '');
-  if (!okEmail || !okPass) return { success: false, message: 'Falta configurar ADMIN_EMAIL y ADMIN_PASSWORD' };
+  if (!okEmail || !okPass) return { success: false, message: 'Falta configurar ADMIN_PASSWORD' };
   if (!throttle_('login', 20)) return { success: false, message: 'Demasiados intentos. Espere un minuto.' };
   if (String(email || '').trim().toLowerCase() !== okEmail || String(password || '') !== okPass) {
     return { success: false, message: 'Credenciales incorrectas' };
@@ -236,7 +236,9 @@ function requireStaff_(token) {
 }
 
 function sign_(text) {
-  var secret = PropertiesService.getScriptProperties().getProperty('SESSION_SECRET') || 'vital-d-cambiar';
+  var props = PropertiesService.getScriptProperties();
+  var secret = props.getProperty('SESSION_SECRET');
+  if (!secret) { secret = Utilities.getUuid() + Utilities.getUuid(); props.setProperty('SESSION_SECRET', secret); }
   return Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(text, secret));
 }
 
@@ -359,6 +361,8 @@ function json_(obj) { return ContentService.createTextOutput(JSON.stringify(obj)
 // Ejecutar una vez desde el editor para autorizar correo, hoja y conexión a Gemini.
 function autorizar() {
   sheet_('acapulco'); sheet_('queretaro');
+  sign_('inicio');
+  Logger.log('Acceso del staff: ' + (PropertiesService.getScriptProperties().getProperty('ADMIN_EMAIL') || Session.getEffectiveUser().getEmail()));
   Logger.log('Cuota de correo restante hoy: ' + MailApp.getRemainingDailyQuota());
   UrlFetchApp.fetch('https://generativelanguage.googleapis.com/', { muteHttpExceptions: true });
 }

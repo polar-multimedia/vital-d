@@ -7,9 +7,9 @@
    | Propiedad | Valor |
    |---|---|
    | `GEMINI_API_KEY` | la clave de Gemini de AI Studio |
-   | `ADMIN_EMAIL` | el correo con el que el staff entra al escáner |
    | `ADMIN_PASSWORD` | la contraseña del staff para el escáner |
-   | `SESSION_SECRET` | un texto largo inventado, por ejemplo `vitald-qz71-…` |
+
+   El staff entra con el correo de quien implementa el script (o con `ADMIN_EMAIL`, si lo agregas). La firma de sesiones se genera sola.
 
 4. **Autorizar:** en el editor elige la función **`autorizar`** y dale **Ejecutar**. Acepta los permisos de hoja, correo y conexión externa.
 5. **Implementar:** usa **Implementar › Nueva implementación › Aplicación web** con estas opciones:
