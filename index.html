@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#F4EFE7" />
+    <title>Vital D · Adium</title>
+    <meta name="description" content="Confirme su asistencia a Vital D y converse con Adi, su anfitriona." />
+    <meta property="og:title" content="Vital D · Adium" />
+    <meta property="og:description" content="Confirme su asistencia a Vital D en Acapulco o Querétaro." />
+    <link rel="icon" href="/vitald_logo.webp" />
+    <meta name="robots" content="noindex" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              paper: '#F4EFE7',
+              cream: '#FBF7F0',
+              line: '#E6DED0',
+              ink: '#221C33',
+              muted: '#5A5370',
+              plum: '#8E3BA8',
+              sun: '#F2B705',
+              ember: '#E0531F',
+              leaf: '#2F9E6B',
+              wine: '#B3202E',
+            },
+            fontFamily: { sans: ['Manrope', 'Helvetica Neue', 'Arial', 'sans-serif'] },
+          },
+        },
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root { --spectrum: linear-gradient(90deg, #8E3BA8 0%, #E0531F 40%, #F2B705 70%, #2F9E6B 100%); }
+      html, body { background: #F4EFE7; }
+      body {
+        font-family: 'Manrope', 'Helvetica Neue', Arial, sans-serif;
+        font-weight: 500;
+        color: #221C33;
+        -webkit-font-smoothing: antialiased;
+        background:
+          radial-gradient(120% 60% at 50% -10%, rgba(242,183,5,0.16), transparent 60%),
+          #F4EFE7;
+        min-height: 100vh;
+      }
+      .spectrum-bar { background: var(--spectrum); }
+      .spectrum-text { background: var(--spectrum); -webkit-background-clip: text; background-clip: text; color: transparent; }
+      .card { background: #FFFFFF; border: 1px solid #E6DED0; box-shadow: 0 18px 40px -24px rgba(34,28,51,0.35); }
+      .field {
+        width: 100%; background: #FBF7F0; border: 1.5px solid #E6DED0; border-radius: 12px;
+        padding: 13px 14px; font-weight: 600; color: #221C33; outline: none; transition: border-color .2s, box-shadow .2s;
+      }
+      .field::placeholder { color: #9A93AE; font-weight: 500; }
+      .field:focus { border-color: #8E3BA8; box-shadow: 0 0 0 3px rgba(142,59,168,0.15); }
+      .btn-primary {
+        background: #221C33; color: #FFFFFF; font-weight: 800; border-radius: 12px; transition: transform .15s, background .2s;
+      }
+      .btn-primary:hover { background: #3A3058; }
+      .btn-primary:active { transform: scale(.98); }
+      .btn-primary:disabled { background: #9A93AE; cursor: not-allowed; }
+      .fade-in { animation: fadeIn .6s ease-out both; }
+      .rise { animation: rise .7s cubic-bezier(.2,.7,.2,1) both; }
+      @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+      @keyframes rise { from { opacity: 0; transform: translateY(16px) } to { opacity: 1; transform: none } }
+      @media (prefers-reduced-motion: reduce) { .fade-in, .rise { animation: none } }
+
+      /* Escáner (html5-qrcode) */
+      #reader { border: none !important; }
+      #reader__scan_region { background: #FBF7F0; }
+      #reader button {
+        background-color: #221C33 !important; color: #fff !important; border: none !important;
+        padding: 10px 18px !important; border-radius: 10px !important; font-family: 'Manrope', sans-serif !important;
+        font-weight: 800 !important; cursor: pointer !important; margin: 8px 4px !important;
+      }
+      #reader select {
+        background: #FBF7F0 !important; color: #221C33 !important; border: 1px solid #E6DED0 !important;
+        padding: 8px !important; border-radius: 8px !important; font-family: 'Manrope', sans-serif !important;
+      }
+      #reader__dashboard_section_csr span, #reader__dashboard_section_swaplink { color: #5A5370 !important; font-weight: 600; }
+    </style>
+    
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
