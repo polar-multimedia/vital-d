@@ -30,7 +30,7 @@ export const api = {
   count: (s: Sede) => call<{ success: boolean; count: number }>('count', { sede: s.id }),
   register: (s: Sede, d: { nombre: string; correo: string; especialidad: string }) =>
     call<{ success: boolean; existing?: boolean; full?: boolean; message?: string; user?: User }>('register', {
-      sede: s.id, cupo: s.cupo, ...d,
+      sede: s.id, ...d,
     }),
   byEmail: (s: Sede, correo: string) => call<{ success: boolean; user?: User; message?: string }>('byEmail', { sede: s.id, correo }),
   byId: (id: string) => call<{ success: boolean; user?: User; message?: string }>('byId', { id }),

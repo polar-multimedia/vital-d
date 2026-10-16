@@ -9,7 +9,7 @@ type Result =
   | { status: 'ok' | 'repeat' | 'error'; message: string; guest?: string; ciudad?: string; id?: string };
 
 interface Stats {
-  sedes: { id: string; ciudad: string; cupo: number; fecha: string }[];
+  sedes: { id: string; ciudad: string; cupo: number; cupoPublico: number; fecha: string }[];
   stats?: Record<string, { registrados: number; asistieron: number }>;
 }
 
@@ -38,7 +38,7 @@ const AdminPanel: React.FC = () => {
     if (!token) return;
     try {
       const r = guard(await backend.stats(token));
-      setStats({ ...r, sedes: Object.values(SEDES).map((s) => ({ id: s.id, ciudad: s.ciudad, cupo: s.cupo, fecha: s.fechaTexto })) });
+      setStats({ ...r, sedes: Object.values(SEDES).map((s) => ({ id: s.id, ciudad: s.ciudad, cupo: s.cupo, cupoPublico: s.cupoPublico, fecha: s.fechaTexto })) });
     } catch { /* sin conexión */ }
   }, [token, guard]);
 
@@ -152,7 +152,7 @@ const AdminPanel: React.FC = () => {
                     {st?.asistieron ?? '–'}<span className="text-muted text-sm font-bold"> llegaron</span>
                   </p>
                   <p className="text-xs font-bold">{st?.registrados ?? '–'} registrados</p>
-                  <p className="text-xs font-semibold text-muted">Cupo {s.cupo}</p>
+                  <p className="text-xs font-semibold text-muted">Cupo {s.cupoPublico} · cierra en {s.cupo}</p>
                 </div>
               );
             })}

@@ -30,7 +30,8 @@ export interface Sede {
   hotel: string;
   direccion: string;
   mapaQuery: string;       // texto para Google Maps
-  cupo: number;
+  cupo: number;            // tope real: el registro se cierra aquí (lo aplica el Apps Script)
+  cupoPublico: number;     // lo que se muestra y se comunica a médicos y representantes
   lineas: string[];        // líneas terapéuticas del Salón 2; vacío = por anunciar
   ponentes: Ponente[];     // vacío = Adi no menciona nombres
   estacionamiento: string | null; // null = por confirmar (Adi lo dice así)
@@ -89,7 +90,8 @@ export const SEDES: Record<SedeId, Sede> = {
     hotel: 'HS Hotsson Hotel Acapulco',
     direccion: 'Av. Costera Miguel Alemán 1803, Fracc. Magallanes, 39670 Acapulco, Gro.',
     mapaQuery: 'HS Hotsson Smart Hotel Acapulco, Costera Miguel Alemán 1803, Acapulco',
-    cupo: 50,
+    cupo: 60,
+    cupoPublico: 50,
     lineas: ['Salud mental', 'Salud metabólica'],
     ponentes: [
       { nombre: 'Wendy Calderón', especialidad: 'Nutrióloga clínica', tema: 'Mitos y realidades de una hormona vital (plenaria durante el desayuno)' },
@@ -112,7 +114,8 @@ export const SEDES: Record<SedeId, Sede> = {
     hotel: 'Grand Fiesta Americana Querétaro',
     direccion: 'Blvd. Bernardo Quintana Arrioja 4050, Álamos 3a Secc., 76160 Querétaro, Qro.',
     mapaQuery: 'Grand Fiesta Americana Querétaro, Bernardo Quintana 4050',
-    cupo: 50,
+    cupo: 60,
+    cupoPublico: 50,
     lineas: ['Salud metabólica', 'Oncología'],
     ponentes: [
       { nombre: 'Wendy Calderón', especialidad: 'Nutrióloga clínica', tema: 'Mitos y realidades de una hormona vital (plenaria durante el desayuno)' },

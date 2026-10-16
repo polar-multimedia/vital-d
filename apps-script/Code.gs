@@ -20,7 +20,8 @@ var HEADERS = ['ID', 'Fecha de registro', 'Nombre', 'Correo', 'Especialidad', 'C
 var COL = { id: 1, fecha: 2, nombre: 3, correo: 4, especialidad: 5, checkin: 6, horaCheckin: 7, enviado: 8 };
 var TABS = { acapulco: 'Acapulco', queretaro: 'Querétaro' };
 var PREFIJOS = { VDA: 'acapulco', VDQ: 'queretaro' };
-var CUPO_MAX = 80; // tope de seguridad; el cupo real lo manda la app (50)
+// Tope real de registros por sede. Se comunica 50; el registro se cierra en 60.
+var CUPO = { acapulco: 60, queretaro: 60 };
 var TZ = 'America/Mexico_City';
 var LOGO_URL = 'https://polar-multimedia.github.io/vital-d/vitald_logo_email.jpg';
 // Google Sheet "Vital D · Registros" (carpeta del proyecto en Drive)
@@ -63,7 +64,6 @@ function register_(req) {
   var nombre = clean_(req.nombre, 120);
   var correo = clean_(req.correo, 160).toLowerCase();
   var especialidad = clean_(req.especialidad, 120);
-  var cupo = Math.min(Number(req.cupo) || 50, CUPO_MAX);
   var prefijo = prefijoDe_(req.sede);
   if (nombre.length < 3 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) return { success: false, message: 'Revise nombre y correo.' };
   if (!throttle_('reg', 120)) return { success: false, message: 'Demasiados registros en este momento. Intente en un minuto.' };
@@ -78,7 +78,7 @@ function register_(req) {
         return { success: true, existing: true, user: toUser_(rows[i], req.sede) };
       }
     }
-    if (rows.length >= cupo) return { success: false, full: true, message: 'Lo sentimos, el cupo de esta sede está completo.' };
+    if (rows.length >= (CUPO[req.sede] || 60)) return { success: false, full: true, message: 'Lo sentimos, el cupo de esta sede está completo.' };
 
     var ids = {};
     var all = allIds_();

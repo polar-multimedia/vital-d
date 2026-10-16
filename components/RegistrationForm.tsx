@@ -68,7 +68,7 @@ const RegistrationForm: React.FC<Props> = ({ sede, closed, closedReason, onRegis
             <p className="text-muted font-semibold mt-2">
               {closedReason === 'past'
                 ? `Gracias por su interés en ${sede.ciudad}.`
-                : `Los ${sede.cupo} lugares de ${sede.ciudad} ya están asignados. Si ya se registró, consulte su boleto.`}
+                : `Los lugares de ${sede.ciudad} ya están asignados. Si ya se registró, consulte su boleto.`}
             </p>
             <button type="button" onClick={() => setView('lookup')} className="mt-5 text-plum font-extrabold text-sm hover:underline">
               Consultar mi boleto

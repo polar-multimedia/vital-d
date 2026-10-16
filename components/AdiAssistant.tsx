@@ -113,7 +113,7 @@ ${agenda}
 5. PONENTES:
 ${ponentes}
 6. ESTACIONAMIENTO: ${estacionamiento}
-7. ACCESO: El registro es personal e intransferible y el cupo es de ${sede.cupo} médicos. No es posible llevar acompañantes ni registrar invitados adicionales en este enlace. Debe presentar su código QR al llegar.
+7. ACCESO: El registro es personal e intransferible y el cupo es de ${sede.cupoPublico} médicos. No es posible llevar acompañantes ni registrar invitados adicionales en este enlace. Debe presentar su código QR al llegar.
 8. ALIMENTOS: Hay desayuno al inicio y coffee break antes del cierre.
 
 LÍMITES (COMPLIANCE):

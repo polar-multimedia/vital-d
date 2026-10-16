@@ -234,7 +234,9 @@ const App: React.FC = () => {
               {state === AppState.REGISTERING && count !== null && (
                 <p className="mt-5 inline-flex items-center gap-2 rounded-full bg-white border border-line px-4 py-1.5 text-sm font-bold">
                   <span className="h-2 w-2 rounded-full bg-leaf" />
-                  {Math.max(0, sede.cupo - count)} de {sede.cupo} lugares disponibles
+                  {count < sede.cupoPublico
+                    ? `${sede.cupoPublico - count} de ${sede.cupoPublico} lugares disponibles`
+                    : 'Últimos lugares disponibles'}
                 </p>
               )}
             </div>
