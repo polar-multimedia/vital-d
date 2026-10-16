@@ -23,6 +23,8 @@ var PREFIJOS = { VDA: 'acapulco', VDQ: 'queretaro' };
 var CUPO_MAX = 80; // tope de seguridad; el cupo real lo manda la app (50)
 var TZ = 'America/Mexico_City';
 var LOGO_URL = 'https://polar-multimedia.github.io/vital-d/vitald_logo_email.jpg';
+// Google Sheet "Vital D · Registros" (carpeta del proyecto en Drive)
+var SHEET_ID = '1VZA5uQmL1nbB6GN7st4IvwKLK53tx-qa_vXAZKULkfM';
 
 function doPost(e) {
   var req;
@@ -280,7 +282,7 @@ function stats_() {
 function sheet_(sede) {
   var name = TABS[sede];
   if (!name) throw new Error('Sede no válida');
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById(SHEET_ID);
   var sh = ss.getSheetByName(name);
   if (!sh) {
     sh = ss.insertSheet(name);
