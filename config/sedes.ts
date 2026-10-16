@@ -127,7 +127,7 @@ export const SEDES: Record<SedeId, Sede> = {
 };
 
 // URL del Apps Script publicado (termina en /exec). Ver apps-script/INSTRUCCIONES.md
-export const BACKEND_URL = 'PEGAR_URL_DEL_APPS_SCRIPT';
+export const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbwr0coRLteaiR0XK4sI_PfuCZaTVrR_8ss3cbSuF9IhHIc2raTvhbiveR0sjNxf_z0c/exec';
 
 export const EVENTO = {
   nombre: 'Vital D',
