@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vital D · Control de pantallas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#14101f; --card:#221b33; --ink:#F6F1E9; --mut:#BDB5CF; --acc:#F2B705; --ok:#2F9E6B; --bad:#E0531F; --line:#ffffff1a; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; background:radial-gradient(ellipse at 50% 0%, #3a2f55 0%, var(--bg) 60%); color:var(--ink);
+         font-family:Manrope,system-ui,sans-serif; padding:20px 16px 40px; }
+  .wrap { max-width:560px; margin:0 auto; }
+  .eyebrow { font-weight:800; letter-spacing:.16em; text-transform:uppercase; font-size:12px; color:var(--acc); }
+  h1 { font-size:24px; font-weight:800; margin:6px 0 4px; }
+  .sub { color:var(--mut); font-size:14px; margin:0 0 18px; }
+  .sedes { display:flex; gap:8px; margin-bottom:18px; }
+  .sedes a { flex:1; text-align:center; padding:10px; border-radius:10px; background:var(--card); color:var(--mut); text-decoration:none; font-weight:700; border:1px solid var(--line); }
+  .sedes a.on { color:#1d1530; background:var(--acc); border-color:var(--acc); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:12px; }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .name { font-weight:800; font-size:17px; }
+  .meta { color:var(--mut); font-size:13px; margin-top:4px; }
+  .pill { font-weight:800; font-size:12px; padding:6px 10px; border-radius:99px; background:#ffffff14; color:var(--mut); white-space:nowrap; }
+  .pill.ok { background:#2F9E6B33; color:#7fe0b0; } .pill.bad { background:#E0531F33; color:#ffab8a; } .pill.warn { background:#F2B70533; color:#ffd866; }
+  .status { text-align:center; padding:18px 16px; }
+  .big { font-size:30px; font-weight:800; margin:4px 0; }
+  .btns { display:grid; grid-template-columns:1fr; gap:10px; margin-top:6px; }
+  button { font:inherit; font-weight:800; border:0; border-radius:14px; padding:18px; font-size:19px; cursor:pointer; }
+  .go { background:var(--acc); color:#1d1530; }
+  .stop { background:#ffffff14; color:var(--ink); font-size:16px; padding:14px; }
+  button:disabled { opacity:.4; cursor:default; }
+  .links { font-size:13px; color:var(--mut); line-height:1.7; }
+  .links a { color:var(--acc); word-break:break-all; }
+  .note { font-size:13px; color:var(--mut); margin-top:8px; text-align:center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Vital D · Pantallas laterales</div>
+  <h1>Control de loops</h1>
+  <p class="sub">Prepara cada pantalla en su equipo; cuando las dos estén listas, inicia. Corren sincronizadas en loop hasta que las detengas.</p>
+  <div class="sedes" id="sedes"></div>
+
+  <div class="card status">
+    <div class="eyebrow" id="estLbl">Estado</div>
+    <div class="big" id="estado">—</div>
+    <div class="meta" id="estMeta"></div>
+  </div>
+
+  <div id="lista"></div>
+
+  <div class="btns">
+    <button class="go" id="goBtn" onclick="iniciar()">▶ Iniciar</button>
+    <button class="stop" id="stopBtn" onclick="detener()">■ Detener (regresan al inicio y esperan)</button>
+  </div>
+  <p class="note" id="goNote"></p>
+
+  <div class="card links" id="links"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="../sync.js"></script>
+<script>
+const SEDE = sedeActual();
+document.getElementById("sedes").innerHTML = Object.entries(SEDES).map(([k, n]) =>
+  `<a href="?sede=${k}" class="${k === SEDE ? "on" : ""}">${n}</a>`).join("");
+
+let EST = { estado: "espera" }, PANT = {};
+const R = refSede(SEDE);
+R.child("estado").on("value", s => { EST = s.val() || { estado: "espera" }; render(); });
+R.child("pantallas").on("value", s => { PANT = s.val() || {}; render(); });
+setInterval(render, 1000);
+
+function viva(p) { return p && p.conectada && (serverNow() - (p.visto || 0) < 15000); }
+
+function render() {
+  const corr = EST.estado === "corriendo";
+  document.getElementById("estado").textContent = corr ? (serverNow() < EST.inicio ? "Arrancando…" : "Corriendo") : "En espera";
+  document.getElementById("estMeta").textContent = corr && EST.inicio ? "Tiempo corriendo: " + fmtDur(serverNow() - EST.inicio) : "Las pantallas muestran el primer cuadro hasta que inicies.";
+  let listas = 0;
+  document.getElementById("lista").innerHTML = Object.entries(PANTALLAS).map(([k, cfg]) => {
+    const p = PANT[k]; const on = viva(p);
+    if (on && p.preparada) listas++;
+    let pill = '<span class="pill bad">Sin conectar</span>', meta = "Abre su enlace en el equipo de esa pantalla y toca \"Preparar pantalla\".";
+    if (on && p.preparada) {
+      pill = corr ? (Math.abs(p.drift || 0) <= 60 ? '<span class="pill ok">Sincronizada</span>' : '<span class="pill warn">Ajustando</span>') : '<span class="pill ok">Lista</span>';
+      meta = corr ? `Desfase ${p.drift || 0} ms` : "Video descargado, esperando inicio";
+    } else if (on) { pill = '<span class="pill warn">Preparando</span>'; meta = "Conectada, descargando video"; }
+    else if (p && p.visto) { meta = "Última señal hace " + fmtDur(serverNow() - p.visto); }
+    return `<div class="card"><div class="row"><div><div class="name">${cfg.nombre}</div><div class="meta">${meta}</div></div>${pill}</div></div>`;
+  }).join("");
+  const goBtn = document.getElementById("goBtn");
+  goBtn.textContent = corr ? "↺ Reiniciar desde el principio" : "▶ Iniciar";
+  document.getElementById("goNote").textContent = listas < 2 && !corr ? `Pantallas listas: ${listas} de 2. Puedes iniciar de todos modos; la que falte se suma en cuanto se prepare.` : "";
+  document.getElementById("stopBtn").disabled = !corr;
+}
+
+function iniciar() {
+  R.child("estado").set({ estado: "corriendo", inicio: serverNow() + ARRANQUE_MS, por: "control" });
+}
+function detener() {
+  if (!confirmar()) return;
+  R.child("estado").set({ estado: "espera", inicio: 0 });
+}
+function confirmar() { return true; }
+
+const base = location.href.replace(/control\/.*$/, "pantalla/");
+document.getElementById("links").innerHTML = "<b>Enlaces de cada pantalla (" + SEDES[SEDE] + ")</b><br>" +
+  Object.entries(PANTALLAS).map(([k, c]) => `${c.nombre}: <a href="${base}?sede=${SEDE}&lado=${k}" target="_blank">${base}?sede=${SEDE}&lado=${k}</a>`).join("<br>");
+</script>
+</body>
+</html>

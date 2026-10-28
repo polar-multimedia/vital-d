@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vital D · Pantalla lateral</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#000; --ink:#F6F1E9; --mut:#BDB5CF; --acc:#F2B705; --plum:#2E2742; --ok:#2F9E6B; --bad:#E0531F; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--ink); font-family:Manrope,system-ui,sans-serif; overflow:hidden; }
+  #stage { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:#000; }
+  #wrap { position:relative; width:100vw; height:100vh; }
+  #wrap.rot { position:absolute; width:100vh; height:100vw; left:50%; top:50%; }
+  video { width:100%; height:100%; object-fit:contain; display:block; background:#000; }
+  body.cover video { object-fit:cover; }
+  body.running { cursor:none; }
+  #prep { position:fixed; inset:0; z-index:10; display:flex; align-items:center; justify-content:center; padding:24px;
+          background:radial-gradient(ellipse at 50% 30%, #3a2f55 0%, #14101f 70%); }
+  #prep.hidden { display:none; }
+  .card { max-width:520px; width:100%; text-align:center; }
+  .eyebrow { font-weight:800; letter-spacing:.16em; text-transform:uppercase; font-size:13px; color:var(--acc); }
+  h1 { font-weight:800; font-size:30px; margin:10px 0 6px; }
+  p { color:var(--mut); line-height:1.55; font-size:16px; margin:6px 0; }
+  .btn { font:inherit; font-weight:800; font-size:20px; border:0; border-radius:14px; padding:18px 28px; margin:18px 6px 0;
+         background:var(--acc); color:#1d1530; cursor:pointer; }
+  .btn.alt { background:#ffffff1a; color:var(--ink); font-size:16px; padding:14px 22px; }
+  .btn:disabled { opacity:.45; cursor:default; }
+  .bar { height:10px; background:#ffffff1f; border-radius:99px; overflow:hidden; margin:22px auto 6px; max-width:420px; }
+  .bar i { display:block; height:100%; width:0; background:var(--acc); transition:width .2s; }
+  #hud { position:fixed; left:14px; bottom:14px; z-index:5; font-size:14px; font-weight:700; background:#000a; padding:10px 14px;
+         border-radius:10px; color:var(--ink); display:none; line-height:1.5; }
+  body.hud #hud { display:block; }
+  .dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; background:var(--mut); }
+  .dot.ok { background:var(--ok); } .dot.bad { background:var(--bad); }
+  #wait { position:fixed; inset:0; z-index:4; display:none; align-items:flex-end; justify-content:center; padding-bottom:5vh; pointer-events:none; }
+  body.ready:not(.running) #wait { display:flex; }
+  #wait span { background:#000b; padding:10px 18px; border-radius:99px; font-weight:800; font-size:15px; color:var(--ink); }
+</style>
+</head>
+<body>
+<div id="stage"><div id="wrap"><video id="v" muted playsinline loop preload="auto" disablepictureinpicture></video></div></div>
+<div id="wait"><span id="waitTxt">Pantalla lista · esperando "Iniciar"</span></div>
+
+<div id="prep">
+  <div class="card" id="pick" hidden>
+    <div class="eyebrow">Vital D · <span class="sedeName"></span></div>
+    <h1>¿Qué pantalla es esta?</h1>
+    <p>Elige el loop que va en este proyector.</p>
+    <button class="btn" onclick="elegir('metabolica')">Salud metabólica</button>
+    <button class="btn" onclick="elegir('mental')">Salud mental</button>
+  </div>
+  <div class="card" id="ready" hidden>
+    <div class="eyebrow">Vital D · <span class="sedeName"></span></div>
+    <h1 id="ladoName"></h1>
+    <p>Descarga el video completo a este equipo para que corra horas sin depender del internet, y queda a la espera de la orden de inicio.</p>
+    <button class="btn" id="prepBtn" onclick="preparar()">▶ Preparar pantalla</button>
+    <div class="bar" id="barWrap" hidden><i id="bar"></i></div>
+    <p id="prepMsg"></p>
+    <button class="btn alt" onclick="location.search='?sede='+SEDE">Cambiar de pantalla</button>
+  </div>
+</div>
+
+<div id="hud"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="../sync.js"></script>
+<script>
+const SEDE = sedeActual();
+const LADO = PANTALLAS[param("lado", "")] ? param("lado") : null;
+const ROT = parseInt(param("rot", "0"), 10) || 0;
+if (param("fit", "") === "cover") document.body.classList.add("cover");
+document.querySelectorAll(".sedeName").forEach(e => e.textContent = SEDES[SEDE]);
+
+const v = document.getElementById("v");
+const wrap = document.getElementById("wrap");
+if (ROT) { wrap.classList.add("rot"); wrap.style.transform = `translate(-50%,-50%) rotate(${ROT}deg)`; }
+
+let ESTADO = { estado: "espera", inicio: 0 };
+let PREPARADA = false, DUR = 0, lastDrift = 0, wakeLock = null, hb = null;
+
+function elegir(l) { const q = new URLSearchParams(location.search); q.set("sede", SEDE); q.set("lado", l); location.search = q.toString(); }
+
+if (!LADO) { document.getElementById("pick").hidden = false; }
+else {
+  document.getElementById("ready").hidden = false;
+  document.getElementById("ladoName").textContent = PANTALLAS[LADO].nombre;
+  v.poster = "../" + PANTALLAS[LADO].poster;
+  document.title = "Vital D · " + PANTALLAS[LADO].nombre;
+}
+
+async function pedirWakeLock() {
+  try { if ("wakeLock" in navigator) { wakeLock = await navigator.wakeLock.request("screen"); } } catch (_) {}
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && PREPARADA) pedirWakeLock(); });
+
+async function descargar(url, onProg) {
+  const r = await fetch(url, { cache: "force-cache" });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  const total = +r.headers.get("content-length") || 0;
+  if (!r.body || !total) { const b = await r.blob(); onProg(1); return b; }
+  const reader = r.body.getReader(); const parts = []; let got = 0;
+  for (;;) { const { done, value } = await reader.read(); if (done) break; parts.push(value); got += value.length; onProg(got / total); }
+  return new Blob(parts, { type: r.headers.get("content-type") || "video/mp4" });
+}
+
+async function preparar() {
+  const btn = document.getElementById("prepBtn"), msg = document.getElementById("prepMsg");
+  btn.disabled = true;
+  try { await Promise.race([document.documentElement.requestFullscreen({ navigationUI: "hide" }), new Promise(r => setTimeout(r, 1500))]); } catch (_) {}
+  pedirWakeLock();
+  document.getElementById("barWrap").hidden = false;
+  msg.textContent = "Descargando video…";
+  try {
+    const blob = await descargar("../" + PANTALLAS[LADO].video, p => {
+      document.getElementById("bar").style.width = Math.round(p * 100) + "%";
+      msg.textContent = "Descargando video… " + Math.round(p * 100) + "%";
+    });
+    v.src = URL.createObjectURL(blob);
+  } catch (e) {
+    msg.textContent = "No se pudo descargar completo; se usará en streaming.";
+    v.src = "../" + PANTALLAS[LADO].video;
+  }
+  await new Promise(res => { if (v.readyState >= 3) res(); else v.addEventListener("canplaythrough", res, { once: true }); });
+  DUR = v.duration;
+  // desbloquea la reproducción en este navegador (gesto del usuario)
+  try { await v.play(); } catch (_) {}
+  v.pause(); v.currentTime = 0;
+  PREPARADA = true;
+  document.getElementById("prep").classList.add("hidden");
+  document.body.classList.add("ready");
+  registrar();
+  aplicar();
+}
+
+function registrar() {
+  const me = refSede(SEDE).child("pantallas/" + LADO);
+  me.onDisconnect().update({ conectada: false });
+  const beat = () => me.update({
+    conectada: true, preparada: PREPARADA, visto: firebase.database.ServerValue.TIMESTAMP,
+    drift: Math.round(lastDrift * 1000), reproduciendo: !v.paused, duracion: DUR
+  });
+  beat(); clearInterval(hb); hb = setInterval(beat, 4000);
+  db.ref(".info/connected").on("value", s => { if (s.val()) { me.onDisconnect().update({ conectada: false }); beat(); } });
+}
+
+refSede(SEDE).child("estado").on("value", s => { ESTADO = s.val() || { estado: "espera", inicio: 0 }; aplicar(); });
+
+function esperado() {
+  const t = (serverNow() - ESTADO.inicio) / 1000;
+  return ((t % DUR) + DUR) % DUR;
+}
+
+function aplicar() {
+  if (!PREPARADA) return;
+  if (ESTADO.estado === "corriendo" && ESTADO.inicio) {
+    document.body.classList.add("running");
+    if (serverNow() < ESTADO.inicio) {               // aún no llega la hora de arranque
+      if (!v.paused) v.pause();
+      if (v.currentTime > 0.05) v.currentTime = 0;
+      document.getElementById("waitTxt").textContent = "Arrancando…";
+      return;
+    }
+    if (v.paused) { v.currentTime = esperado() + 0.05; v.play().catch(() => {}); }
+  } else {
+    document.body.classList.remove("running");
+    document.getElementById("waitTxt").textContent = 'Pantalla lista · esperando "Iniciar"';
+    if (!v.paused) v.pause();
+    if (v.currentTime > 0.05) v.currentTime = 0;
+  }
+}
+
+// lazo de sincronía: corrige deriva con velocidad y, si es grande, con salto
+setInterval(() => {
+  if (!PREPARADA) return;
+  aplicar();
+  if (ESTADO.estado !== "corriendo" || v.paused || serverNow() < ESTADO.inicio) { v.playbackRate = 1; return; }
+  let d = v.currentTime - esperado();
+  if (d > DUR / 2) d -= DUR; if (d < -DUR / 2) d += DUR;
+  lastDrift = d;
+  if (Math.abs(d) > 0.35) { v.currentTime = esperado() + 0.08; v.playbackRate = 1; }
+  else if (Math.abs(d) > 0.02) { v.playbackRate = Math.min(1.05, Math.max(0.95, 1 - d * 0.6)); }
+  else v.playbackRate = 1;
+  hud();
+}, 250);
+
+function hud() {
+  const h = document.getElementById("hud");
+  if (!document.body.classList.contains("hud")) return;
+  const corr = ESTADO.estado === "corriendo";
+  h.innerHTML = `<div><span class="dot ${corr ? "ok" : ""}"></span>${PANTALLAS[LADO].nombre} · ${SEDES[SEDE]}</div>
+    <div>${corr ? "Corriendo " + fmtDur(serverNow() - ESTADO.inicio) : "En espera"}</div>
+    <div>Desfase: ${Math.round(lastDrift * 1000)} ms · velocidad ${v.playbackRate.toFixed(3)}</div>`;
+}
+// "i" o doble toque muestra/oculta el estado
+document.addEventListener("keydown", e => { if (e.key === "i" || e.key === "I") { document.body.classList.toggle("hud"); hud(); } });
+document.addEventListener("dblclick", () => { document.body.classList.toggle("hud"); hud(); });
+v.addEventListener("stalled", () => { if (PREPARADA) aplicar(); });
+</script>
+</body>
+</html>
